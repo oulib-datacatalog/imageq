@@ -90,7 +90,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
     #select each bag
     for bag in bags.split(','):
         url_template="{0}/api/catalog/data/catalog/bagit_inventory/?page_size=1&query={'filter':{'s3.valid':True,'bag':{1}},'projection':{'s3':1}}"
-        r=requests.get(url_template.format(bucket,bag))
+        r=requests.get(url_template.format(hostname,bag))
         data=r.json()["results"]
         src_input = os.path.join(resultpath,'src/',bag)
         output = os.path.join(resultpath,'output/',bag)
