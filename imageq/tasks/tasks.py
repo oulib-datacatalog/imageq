@@ -88,7 +88,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
     #s3 boto
     s3 = boto3.resource('s3')
     #get data catalog token
-    f1=open('~/.aws/cybercom_token','r')
+    f1=open('/code/cybercom_token','r')
     token = "Token {0}".format(f1.read())
     f1.close()
     headers ={'Content-Type':'application/json',"Authorization":token}
