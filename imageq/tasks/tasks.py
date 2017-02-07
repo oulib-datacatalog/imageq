@@ -3,7 +3,7 @@ from dockertask import docker_task
 from PIL import Image
 from subprocess import check_call, check_output, call
 from tempfile import NamedTemporaryFile
-import os,boto3,requests,shlex
+import os,boto3,requests,shlex,shutil
 
 #Default base directory
 basedir = "/data/web_data/static"
@@ -106,6 +106,6 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                     outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
                     os.remove(inpath)
-        shutil.rmtree(src_input = os.path.join(resultpath,'src/',bag)
-    shutil.rmtree(src_input = os.path.join(resultpath,'src/')
+        shutil.rmtree(os.path.join(resultpath,'src/',bag))
+    shutil.rmtree(os.path.join(resultpath,'src/'))
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
