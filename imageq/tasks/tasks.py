@@ -98,7 +98,6 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
         output = os.path.join(resultpath,'output/',bag)
         os.makedirs(src_input)
         os.makedirs(output)
-        call(['aws','s3',"s3://{0}/{1}/data".format(itm['s3']['bucket'],bag)
         print src_input,output
         #download source files
         for itm in data:
