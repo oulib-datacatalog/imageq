@@ -3,7 +3,7 @@ from dockertask import docker_task
 from PIL import Image
 from subprocess import check_call, check_output, call
 from tempfile import NamedTemporaryFile
-import os,boto3,requests
+import os,boto3,requests,shlex
 
 #Default base directory
 basedir = "/data/web_data/static"
@@ -107,7 +107,8 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
             s3_path = "s3://{0}/{1}/data/".format(bucket,bag)
             s3_out = "{0}/".format(src_input)
             print s3_path,s3_out
-            check_call(['aws','s3','sync',s3_path,s3_out,])
+            command = "aws s3 sync {0} {1}".format(s3_path,s3_out)
+            check_call(shlex.split(command))
             #call(['aws','s3',"s3://{0}/data/".format(bucket),src_input)
             for fle in itm['s3']["verified"]:
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
