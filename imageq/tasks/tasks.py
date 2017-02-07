@@ -96,6 +96,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
         output = os.path.join(resultpath,'output/',bag)
         os.makedirs(src_input)
         os.makedirs(output)
+        print src_input,output
         #download source files
         for itm in data:
             bucket = itm['s3']['bucket']
@@ -107,6 +108,5 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                         outformat=outformat,
                         filter=filter,
                         scale=scale,
-                        crop=crop
-                        )
+                        crop=crop)
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
