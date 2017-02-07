@@ -76,7 +76,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
     args:
       bags - comma separated string of bag names
     kwargs
-      outformat - string representation of image format - default is "TIFF"
+      outformat - string representation of image format - default is "TIFF". Available Formats: http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html
       scale - percentage to scale by represented as a decimal
       filter - string representing filter to apply to resized image - default is "ANTIALIAS"
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
