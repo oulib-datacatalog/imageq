@@ -98,20 +98,19 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
         output = os.path.join(resultpath,'output/',bag)
         os.makedirs(src_input)
         os.makedirs(output)
-        #call(['aws','s3',"s3://"
+        call(['aws','s3',"s3://{0}/{1}/data".format(itm['s3']['bucket'],bag)
         print src_input,output
         #download source files
         for itm in data:
             bucket = itm['s3']['bucket']
+            call(['aws','s3',"s3://{0}/{1}/data".format(bucket,bag),scr_input])
             #call(['aws','s3',"s3://{0}/data/".format(bucket),src_input)
             for fle in itm['s3']["verified"]:
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
-                    with open("{0}/{1}".format(src_input,fle.split('/')[-1]),'wb') as data:
-                        s3_client.download_fileobj(bucket,fle,data)
-                        _processimage(inpath="{0}/{1}".format(src_input,fle.split('/')[-1]),
-                            outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat),
-                            outformat=outformat,
-                            filter=filter,
-                            scale=scale,
-                            crop=crop)
+                    _processimage(inpath="{0}/{1}".format(src_input,fle.split('/')[-1]),
+                        outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat),
+                        outformat=outformat,
+                        filter=filter,
+                        scale=scale,
+                        crop=crop)
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
