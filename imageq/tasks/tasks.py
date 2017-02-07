@@ -101,7 +101,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
             bucket = itm['s3']['bucket']
             for fle in itm['s3']["verified"]:
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
-                    s3_client.download_file(bucket,fle,"{0}/{1}".format(src_input,fle))
+                    s3_client.download_file(bucket,fle,"{0}/{1}".format(src_input,fle.split('/')[-1]))
                     _processimage(inpath="{0}/{1}".format(src_input,fle),
                         outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat),
                         outformat=outformat,
