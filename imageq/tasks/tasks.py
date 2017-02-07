@@ -3,7 +3,7 @@ from dockertask import docker_task
 from PIL import Image
 from subprocess import check_call, check_output, call
 from tempfile import NamedTemporaryFile
-import os,boto3,requests,shlex,shutil
+import os,boto3,requests,shlex,shutil,json
 
 #Default base directory
 basedir = "/data/web_data/static"
