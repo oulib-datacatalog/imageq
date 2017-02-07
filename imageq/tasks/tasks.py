@@ -3,7 +3,7 @@ from dockertask import docker_task
 from PIL import Image
 from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
-import os
+import os,boto3
 
 #Default base directory
 basedir = "/data/"
