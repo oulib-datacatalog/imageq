@@ -82,13 +82,10 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
     """
     task_id = str(catalog_derivative_gen.request.id)
-    print task_id
     #create Result Directory
     resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
-    print resultpath
     os.makedirs(resultpath)
     #s3 boto
-    #s3_client = boto3.client('s3')
     s3 = boto3.resource('s3')
     #select each bag
     for bag in bags.split(','):
@@ -96,27 +93,17 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
         r=requests.get(url_template % (hostname,bag))
         data=r.json()["results"]
         src_input = os.path.join(resultpath,'src/',bag)
-        output = os.path.join(resultpath,'output/',bag)
+        output = os.path.join(resultpath,'derivative/',bag)
         os.makedirs(src_input)
         os.makedirs(output)
-        print src_input,output
         #download source files
         for itm in data:
             bucket = itm['s3']['bucket']
-            print bucket,bag
-            #call(['aws','s3','sync',"--include",'*.tif',"--include",'*.tiff',"s3://{0}/{1}/data/".format(bucket,bag),"{0}/".format(src_input)])
-            #s3_path = "s3://{0}/{1}/data/".format(bucket,bag)
-            #s3_out = "{0}/".format(src_input)
-            #print s3_path,s3_out
-            #command = "aws s3 sync {0} {1}".format(s3_path,s3_out)
-            #check_call(shlex.split(command))
-            #call(['aws','s3',"s3://{0}/data/".format(bucket),src_input)
             for fle in itm['s3']["verified"]:
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
                     inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
                     s3.meta.client.download_file(bucket, fle, inpath)
-                    inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
                     outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
-                    print inpath,outpath
                     _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                    os.remove(inpath)
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
