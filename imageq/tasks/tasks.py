@@ -82,8 +82,10 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
     """
     task_id = str(catalog_derivative_gen.request.id)
+    print task_id
     #create Result Directory
     resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
+    print resultpath
     os.makedirs(resultpath)
     #s3 boto
     s3_client = boto3.client('s3')
@@ -102,11 +104,12 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
             bucket = itm['s3']['bucket']
             for fle in itm['s3']["verified"]:
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
-                    s3_client.download_file(bucket,fle,"{0}/{1}".format(src_input,fle.split('/')[-1]))
-                    _processimage(inpath="{0}/{1}".format(src_input,fle),
-                        outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat),
-                        outformat=outformat,
-                        filter=filter,
-                        scale=scale,
-                        crop=crop)
+                    with open("{0}/{1}".format(src_input,fle.split('/')[-1]),'wb') as data:
+                        s3_client.download_fileobj(bucket,fle,data)
+                        _processimage(inpath="{0}/{1}".format(src_input,fle),
+                            outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat),
+                            outformat=outformat,
+                            filter=filter,
+                            scale=scale,
+                            crop=crop)
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
