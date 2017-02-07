@@ -107,7 +107,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
             #call(['aws','s3','sync',"--include",'*.tif',"--include",'*.tiff',"s3://{0}/{1}/data/".format(bucket,bag),"{0}/".format(src_input)])
             #s3_path = "s3://{0}/{1}/data/".format(bucket,bag)
             #s3_out = "{0}/".format(src_input)
-            print s3_path,s3_out
+            #print s3_path,s3_out
             #command = "aws s3 sync {0} {1}".format(s3_path,s3_out)
             #check_call(shlex.split(command))
             #call(['aws','s3',"s3://{0}/data/".format(bucket),src_input)
