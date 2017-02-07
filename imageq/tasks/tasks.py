@@ -89,8 +89,8 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
     s3_client = boto3.client('s3')
     #select each bag
     for bag in bags.split(','):
-        url_template="%s/api/catalog/data/catalog/bagit_inventory/?page_size=1&query={'filter':{'s3.valid':True,'bag':%s},'projection':{'s3':1}}"
-        r=requests.get(url_template %s (hostname,bag))
+        url_template="%s/api/catalog/data/catalog/bagit_inventory/?page_size=1&query={'filter':{'s3.valid':True,'bag':'%s'},'projection':{'s3':1}}"
+        r=requests.get(url_template % (hostname,bag))
         data=r.json()["results"]
         src_input = os.path.join(resultpath,'src/',bag)
         output = os.path.join(resultpath,'output/',bag)
