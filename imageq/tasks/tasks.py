@@ -88,7 +88,8 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
     print resultpath
     os.makedirs(resultpath)
     #s3 boto
-    s3_client = boto3.client('s3')
+    #s3_client = boto3.client('s3')
+    s3 = boto3.resource('s3')
     #select each bag
     for bag in bags.split(','):
         url_template="%s/api/catalog/data/catalog/bagit_inventory/.json?page_size=1&query={'filter':{'s3.valid':True,'bag':'%s'},'projection':{'s3':1}}"
@@ -104,14 +105,16 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
             bucket = itm['s3']['bucket']
             print bucket,bag
             #call(['aws','s3','sync',"--include",'*.tif',"--include",'*.tiff',"s3://{0}/{1}/data/".format(bucket,bag),"{0}/".format(src_input)])
-            s3_path = "s3://{0}/{1}/data/".format(bucket,bag)
-            s3_out = "{0}/".format(src_input)
+            #s3_path = "s3://{0}/{1}/data/".format(bucket,bag)
+            #s3_out = "{0}/".format(src_input)
             print s3_path,s3_out
-            command = "aws s3 sync {0} {1}".format(s3_path,s3_out)
-            check_call(shlex.split(command))
+            #command = "aws s3 sync {0} {1}".format(s3_path,s3_out)
+            #check_call(shlex.split(command))
             #call(['aws','s3',"s3://{0}/data/".format(bucket),src_input)
             for fle in itm['s3']["verified"]:
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
+                    inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
+                    s3.meta.client.download_file(bucket, fle, inpath)
                     inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
                     outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     print inpath,outpath
