@@ -118,7 +118,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
         shutil.rmtree(os.path.join(resultpath,'src/',bag))
         #set data catalog new inventory
         if datacatalog:
-            req = requests.get(url_new_catalog + "?query= {'filter':{'bag':'%s'}}" % (bag))
+            req = requests.get(url_new_catalog + "?query={'filter':{'bag':'%s'}}" % (bag))
             d1=req.json()
             if d1['count']>0:
                 newdata=d1['results'][0]
