@@ -8,7 +8,7 @@ import os,boto3,requests,shlex,shutil,json
 #Default base directory
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
-s3_derivative_stub="derivative-bags/"
+s3_derivative_stub="derivative-bags"
 #imagemagick needs to be installed within the docker container
 
 
