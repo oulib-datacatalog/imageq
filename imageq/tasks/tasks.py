@@ -138,7 +138,7 @@ def data_catalog(bag,derivative_info, org_data,database='catalog',collection='di
     f1.close()
     headers ={'Content-Type':'application/json',"Authorization":token}
     url_dc_collection="{0}/api/catalog/data/{1}/{2}/.json".format(hostname,database,collection)
-    update_url_templae = "{0}/api/catalog/data/{1}/{2}/{3}/.json"
+    update_url_template = "{0}/api/catalog/data/{1}/{2}/{3}/.json"
     # check for existing metadata listing
     req = requests.get(url_dc_collection + "?query={'filter':{'bag':'%s'}}" % (bag))
     d_object=req.json()
