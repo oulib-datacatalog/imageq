@@ -1,15 +1,11 @@
 from celery.task import task
-from dockertask import docker_task
 from PIL import Image
-from subprocess import check_call, check_output
-from tempfile import NamedTemporaryFile
+import cv2
 import os
 
 #Default base directory
 basedir = "/data/"
-hostname = "https://cc.lib.ou.edu"
-
-#imagemagick needs to be installed within the docker container
+hostname = "http://localhost"
 
 
 def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
@@ -19,14 +15,11 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
 
     try:
         image = Image.open(inpath)
-    except (IOError, OSError):
+    except (IOError):
         # workaround for Pillow not handling 16bit images
-        if "16-bit" in check_output(("identify", inpath)):
-            with NamedTemporaryFile() as tmpfile:
-                check_call(("convert", inpath, "-depth", "8", tmpfile.name))
-                image = Image.open(tmpfile.name)
-        else:
-            raise Exception
+        im = cv2.imread(inpath) # opencv loads as 8bit BGR color
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB) # realign to RGB
+        image = Image.fromarray(im)
 
     if crop:
         image = image.crop(crop)
