@@ -106,9 +106,9 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                 #filter for tiff or tiff files
                 if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
                     #download file from s3
+                    inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
                     s3.meta.client.download_file(bucket, fle, inpath)
                     #setup paths from image processing
-                    inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
                     outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     out_url = "{0}/oulib_tasks/{1}/derivative/{2}/{3}.{4}".format(hostname, task_id,bag,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     #process image
