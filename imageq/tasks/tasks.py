@@ -1,4 +1,5 @@
 from celery.task import task
+from celery import group
 from dockertask import docker_task
 from PIL import Image
 from subprocess import check_call, check_output, call
@@ -40,7 +41,7 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
 
 
 @task()
-def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
+def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None,parent_id=None):
     """
     Digilab TIFF derivative Task
 
@@ -52,19 +53,29 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
       filter - string representing filter to apply to resized image - default is "ANTIALIAS"
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
     """
+    if not parent_id:
+        task_id = str(processimage.request.id)
+        #create Result Directory
+        resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
+        os.makedirs(resultpath)
 
-    task_id = str(processimage.request.id)
-    #create Result Directory
-    resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
-    os.makedirs(resultpath)
-
-    _processimage(inpath=os.path.join(basedir, inpath),
+        _processimage(inpath=os.path.join(basedir, inpath),
                   outpath=os.path.join(resultpath, outpath),
                   outformat=outformat,
                   filter=filter,
                   scale=scale,
                   crop=crop
                   )
+    else:
+        
+        _processimage(inpath=inpath,
+                  outpath= outpath,
+                  outformat=outformat,
+                  filter=filter,
+                  scale=scale,
+                  crop=crop
+                  )
+        return "{0}/oulib_tasks/{1}/derivative/{2}".format(hostname, parent_id,outpath.split('/')[-1])
 
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
@@ -103,6 +114,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
         os.makedirs(src_input)
         os.makedirs(output)
         derivatives={}
+        tasks=[]
         #download source files
         for itm in data:
             bucket = itm['s3']['bucket']
@@ -112,9 +124,13 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                     s3.meta.client.download_file(bucket, fle, inpath)
                     outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     out_url = "{0}/oulib_tasks/{1}/derivative/{2}.{3}".format(hostname, task_id,fle.split('/')[-1].split('.')[0].lower(),outformat)
-                    _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                    tasks.append(processimage.subtasks(args=(inpath, outpath),kwargs={"outformat":outformat,"filter":filter,"scale":scale,"crop":crop,"parent_id":task_id})
+                    #_processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
                     derivatives[fle.split('/')[-1].split('.')[0].lower()]={"location":out_url,"outformat":outformat,"filter":filter,"scale":scale,"crop":crop}
-                    os.remove(inpath)
+                    #os.remove(inpath)
+            job = group(tasks)
+            result = job.apply_async()
+            child_results=result.join()
         shutil.rmtree(os.path.join(resultpath,'src/',bag))
         #set data catalog new inventory
         if datacatalog:
@@ -132,4 +148,4 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                 newdata['derivatives']=derivatives
             req=requests.post(url_new_catalog,data=json.dumps(newdata),headers=headers)         
     shutil.rmtree(os.path.join(resultpath,'src/'))
-    return "{0}/oulib_tasks/{1}".format(hostname, task_id)
+    return {"result": "{0}/oulib_tasks/{1}".format(hostname, task_id),"subtasks_results":child_results}
