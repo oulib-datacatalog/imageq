@@ -143,9 +143,9 @@ def data_catalog(bag,derivative_info, org_data,database='catalog',collection='di
     d_object=req.json()
     if d_object['count']>0:
         newdata=d_object['results'][0]
-        if not 'derivatives' in newdata.keys:
+        if not 'derivatives' in newdata.keys():
             newdata['derivatives']={derivative_info["filename"]:[]}
-        if derivative_info["filename"] in newdata['derivatives'].keys:
+        if derivative_info["filename"] in newdata['derivatives'].keys():
              newdata['derivatives'][derivative_info["filename"]].append(derivative_info)
         else:
             newdata['derivatives'][derivative_info["filename"]]= [derivative_info]           
