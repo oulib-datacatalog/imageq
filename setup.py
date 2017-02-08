@@ -11,6 +11,7 @@ setup(name='imageq',
           'paramiko==1.16.0',
           'requests==2.9.1',
           'pillow==3.3.1',
+          'opencv-python==3.2.0.6',
           'jinja2',
       ],
      dependency_links=[
