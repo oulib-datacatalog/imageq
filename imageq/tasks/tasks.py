@@ -8,7 +8,7 @@ import os,boto3,requests,shlex,shutil,json
 #Default base directory
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
-
+s3_derivative_stub="derivative-bags/"
 #imagemagick needs to be installed within the docker container
 
 
@@ -113,8 +113,14 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                     out_url = "{0}/oulib_tasks/{1}/derivative/{2}/{3}.{4}".format(hostname, task_id,bag,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     #process image
                     _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                    #upload derivative to s3
                     filename=fle.split('/')[-1].split('.')[0].lower()
-                    derivative_info={"filename":filename,"local_file":outpath,"location":out_url,"outformat":outformat,"filter":filter,"scale":scale,"crop":crop}
+                    s3_key = "{0}/{1}/{2}.{3}".format(s3_derivative_stub,bag,filename,outformat)
+                    s3.meta.client.upload_file(outpath, bucket, s3_key)
+                    s3_url = "https://s3.amazonaws.com/{0}/{1}".format(bucket,s3_key)
+                    #derviative information
+                    derivative_info={"filename":filename,"s3":{"bucket":bucket,"key":s3_key,"url":s3_url},"temp_local_file":outpath,
+                                    "temp_local_url":out_url,"outformat":outformat,"filter":filter,"scale":scale,"crop":crop}
                     os.remove(inpath)
                     if datacatalog:
                         data_catalog(bag,derivative_info, itm)
