@@ -89,7 +89,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
     s3 = boto3.resource('s3')
     #get data catalog token
     f1=open('/code/cybercom_token','r')
-    token = "Token {0}".format(f1.read())
+    token = "Token {0}".format(f1.read().strip())
     f1.close()
     headers ={'Content-Type':'application/json',"Authorization":token}
     url_new_catalog="https://cc.lib.ou.edu/api/catalog/data/catalog/digital_objects/.json"
