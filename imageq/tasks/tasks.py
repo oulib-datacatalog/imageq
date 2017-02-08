@@ -151,7 +151,7 @@ def data_catalog(bag,derivative_info, org_data,database='catalog',collection='di
             newdata['derivatives'][derivative_info["filename"]]= [derivative_info]           
         #update metadata
         uls=url_dc_collection.split('.')
-        update_url="{0}/{1}/.{2}".format(uls[0],newdata['_id'],uls[1]
+        update_url="{0}/{1}/.{2}".format(uls[0],newdata['_id'],uls[1])
         req=requests.put(update_url,data=json.dumps(newdata),headers=headers)
     else:
         newdata={}
