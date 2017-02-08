@@ -124,7 +124,7 @@ def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None
                     s3.meta.client.download_file(bucket, fle, inpath)
                     outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
                     out_url = "{0}/oulib_tasks/{1}/derivative/{2}.{3}".format(hostname, task_id,fle.split('/')[-1].split('.')[0].lower(),outformat)
-                    tasks.append(processimage.subtasks(args=(inpath, outpath),kwargs={"outformat":outformat,"filter":filter,"scale":scale,"crop":crop,"parent_id":task_id})
+                    tasks.append(processimage.subtasks(args=(inpath, outpath),kwargs={"outformat":outformat,"filter":filter,"scale":scale,"crop":crop,"parent_id":task_id}))
                     #_processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
                     derivatives[fle.split('/')[-1].split('.')[0].lower()]={"location":out_url,"outformat":outformat,"filter":filter,"scale":scale,"crop":crop}
                     #os.remove(inpath)
