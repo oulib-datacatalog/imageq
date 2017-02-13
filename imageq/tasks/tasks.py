@@ -69,6 +69,59 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
 @task()
+def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_destination='derivative-bags',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
+    """
+        This task is used for derivative generation for the OU Library. This does not use the data catalog.
+        Bags do not have to be valid. TIFF or TIF files are transformed and upload to AWS S3 destination.
+
+        args:
+            bags (string): comma separated list of bags. Example - 'bag1,bag2,bag3'
+        kwargs:
+            s3_bucket (string); Defult 'ul-bagit' 
+            s3_source (string): Default 'source-bags'
+            s3_destination (string): Default 'derivative-bags'
+            outformat - string representation of image format - default is "TIFF". 
+                        Available Formats: http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html
+            scale - percentage to scale by represented as a decimal
+            filter - string representing filter to apply to resized image - default is "ANTIALIAS"
+            crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
+    """
+    task_id = str(derivative_generation.request.id)
+    #create Result Directory
+    resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
+    os.makedirs(resultpath)
+    #s3 boto
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(s3_bucket)
+    for bag in bags.split(','):
+        derivative_keys=[]
+        src_input = os.path.join(resultpath,'src/',bag)
+        output = os.path.join(resultpath,'derivative/',bag)
+        src_input = os.path.join(resultpath,'src/',bag)
+        output = os.path.join(resultpath,'derivative/',bag)
+        os.makedirs(src_input)
+        os.makedirs(output)
+        source_location = "{0}/{1}/data".format(s3_source,bag)
+        for obj in bucket.objects.filter(Prefix=s3_location):
+            filename=obj.key
+            if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
+                inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
+                s3.meta.client.download_file(bucket.name, filename, inpath)
+                outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),outformat)
+                #process image
+                _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                #upload derivative to s3
+                fname=filename.split('/')[-1].split('.')[0].lower()
+                s3_key = "{0}/{1}/{2}.{3}".format(s3_destination,bag,fname,outformat)
+                derivative_keys.append(s3_key)
+                #upload to 
+                s3.meta.client.upload_file(outpath, bucket.name, s3_key)
+                os.remove(inpath)
+        shutil.rmtree(os.path.join(resultpath,'src/',bag))
+    shutil.rmtree(os.path.join(resultpath,'src/'))
+    return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags} 
+
+@task()
 def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, datacatalog=True):
     """
     Digilab data catalog derivative generation
