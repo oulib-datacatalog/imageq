@@ -3,13 +3,14 @@ from dockertask import docker_task
 from PIL import Image
 from subprocess import check_call, check_output, call
 from tempfile import NamedTemporaryFile
-import os,boto3,requests,shlex,shutil,json
+import os, boto3, requests, shlex, shutil, json
 
-#Default base directory
+# Default base directory
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
 s3_derivative_stub="derivative-bags"
-#imagemagick needs to be installed within the docker container
+
+# imagemagick needs to be installed within the docker container
 
 
 def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
@@ -39,6 +40,20 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     image.save(outpath, outformat)
 
 
+def _params_as_string(outformat="", filter="", scale=None, crop=None):
+    """
+    Internal function to return image processing parameters as a single string
+      Input: outformat="TIFF", filter="ANTIALIAS", scale=0.5, crop=[10, 10, 200, 200]
+      Returns: tiff_050_antialias_10_10_200_200
+    """
+
+    imgformat = outformat.lower()
+    imgfilter = filter.lower() if scale else None  # do not include filter if not scaled
+    imgscale = str(int(scale * 100)).zfill(3) if scale else "100"
+    imgcrop = "_".join((str(x) for x in crop)) if crop else None
+    return "_".join((x for x in (imgformat, imgscale, imgfilter, imgcrop) if x))
+
+
 @task()
 def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
@@ -54,7 +69,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
     """
 
     task_id = str(processimage.request.id)
-    #create Result Directory
+    # create Result Directory
     resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
     os.makedirs(resultpath)
 
@@ -68,8 +83,10 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
+
 @task()
-def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_destination='derivative-bags',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
+def derivative_generation(bags, s3_bucket='ul-bagit', s3_source='source-bags', s3_destination='derivative-bags',
+                          outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
         This task is used for derivative generation for the OU Library. This does not use the data catalog.
         Bags do not have to be valid. TIFF or TIF files are transformed and upload to AWS S3 destination.
@@ -86,103 +103,128 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_d
             filter - string representing filter to apply to resized image - default is "ANTIALIAS"
             crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
     """
+
     task_id = str(derivative_generation.request.id)
-    #create Result Directory
+    # create Result Directory
     resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
     os.makedirs(resultpath)
-    #s3 boto
+    # s3 boto
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(s3_bucket)
+
     for bag in bags.split(','):
-        derivative_keys=[]
-        src_input = os.path.join(resultpath,'src/',bag)
-        output = os.path.join(resultpath,'derivative/',bag)
-        src_input = os.path.join(resultpath,'src/',bag)
-        output = os.path.join(resultpath,'derivative/',bag)
+        derivative_keys = []
+        src_input = os.path.join(resultpath, 'src/', bag)
+        output = os.path.join(resultpath, 'derivative/', bag)
         os.makedirs(src_input)
         os.makedirs(output)
-        source_location = "{0}/{1}/data".format(s3_source,bag)
-        for obj in bucket.objects.filter(Prefix=s3_location):
-            filename=obj.key
-            if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
-                inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
+        source_location = "{0}/{1}/data".format(s3_source, bag)
+
+        for obj in bucket.objects.filter(Prefix=source_location):
+            filename = obj.key
+            # filter for files with tif (and tiff) extensions - case insensitive
+            if filename.split('.')[-1].lower() in ('tif', 'tiff'):
+                inpath = "{0}/{1}".format(src_input, filename.split('/')[-1])
                 s3.meta.client.download_file(bucket.name, filename, inpath)
-                outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),outformat)
-                #process image
-                _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
-                #upload derivative to s3
-                fname=filename.split('/')[-1].split('.')[0].lower()
-                s3_key = "{0}/{1}/{2}.{3}".format(s3_destination,bag,fname,outformat)
+                outpath = "{0}/{1}.{2}".format(output, filename.split('/')[-1].split('.')[0].lower(), outformat)
+                # process image
+                _processimage(inpath=inpath, outpath=outpath, outformat=outformat, filter=filter, scale=scale, crop=crop)
+                # upload derivative to s3
+                fname = filename.split('/')[-1].split('.')[0].lower()
+                s3_key = "{0}/{1}/{2}.{3}".format(s3_destination, bag, fname, outformat)
                 derivative_keys.append(s3_key)
-                #upload to 
+                # upload to
                 s3.meta.client.upload_file(outpath, bucket.name, s3_key)
                 os.remove(inpath)
-        shutil.rmtree(os.path.join(resultpath,'src/',bag))
-    shutil.rmtree(os.path.join(resultpath,'src/'))
-    return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags} 
+
+        shutil.rmtree(os.path.join(resultpath, 'src/', bag))
+
+    shutil.rmtree(os.path.join(resultpath, 'src/'))
+
+    return {"local_derivatives": "{0}/oulib_tasks/{1}".format(hostname, task_id),
+            "s3_destination": s3_destination,
+            "s3_bags": bags}
 
 @task()
-def catalog_derivative_gen(bags,outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, datacatalog=True):
+def catalog_derivative_gen(bags, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, datacatalog=True):
     """
     Digilab data catalog derivative generation
 
     args:
       bags - comma separated string of bag names
     kwargs
-      outformat - string representation of image format - default is "TIFF". Available Formats: http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html
+      outformat - string representation of image format - default is "TIFF".
+                  Available Formats: http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html
       scale - percentage to scale by represented as a decimal
       filter - string representing filter to apply to resized image - default is "ANTIALIAS"
       crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
       datacatalog - Perform data catalog update - Default is True
     """
+
     task_id = str(catalog_derivative_gen.request.id)
-    #create Result Directory
+    # create Result Directory
     resultpath = os.path.join(basedir, 'oulib_tasks/', task_id)
     os.makedirs(resultpath)
-    #s3 boto
+    # s3 boto
     s3 = boto3.resource('s3')
-    #catalog url template
+    # catalog url template
     url_template="%s/api/catalog/data/catalog/bagit_inventory/.json?page_size=1&query={'filter':{'s3.valid':True,'bag':'%s'}}"
-    #select each bag
+
+    # select each bag
     for bag in bags.split(','):
-        r=requests.get(url_template % (hostname,bag))
-        data=r.json()["results"]
-        src_input = os.path.join(resultpath,'src/',bag)
-        output = os.path.join(resultpath,'derivative/',bag)
+        r = requests.get(url_template % (hostname, bag))
+        data = r.json()["results"]
+        src_input = os.path.join(resultpath, 'src/', bag)
+        output = os.path.join(resultpath, 'derivative/', bag)
         os.makedirs(src_input)
         os.makedirs(output)
         derivatives={}
-        #download source files
+
+        # download source files
         for itm in data:
             bucket = itm['s3']['bucket']
+
             for fle in itm['s3']["verified"]:
-                #filter for tiff or tiff files
-                if fle.split('/')[-1].split('.')[-1].lower() == 'tif' or fle.split('/')[-1].split('.')[-1].lower() == 'tiff':
-                    #download file from s3
-                    inpath="{0}/{1}".format(src_input,fle.split('/')[-1])
+                # filter for tif or tiff files
+                if fle.split('/')[-1].split('.')[-1].lower() in ('tif', 'tiff'):
+                    # download file from s3
+                    inpath = "{0}/{1}".format(src_input, fle.split('/')[-1])
                     s3.meta.client.download_file(bucket, fle, inpath)
-                    #setup paths from image processing
-                    outpath="{0}/{1}.{2}".format(output,fle.split('/')[-1].split('.')[0].lower(),outformat)
-                    out_url = "{0}/oulib_tasks/{1}/derivative/{2}/{3}.{4}".format(hostname, task_id,bag,fle.split('/')[-1].split('.')[0].lower(),outformat)
-                    #process image
-                    _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
-                    #upload derivative to s3
-                    filename=fle.split('/')[-1].split('.')[0].lower()
-                    s3_key = "{0}/{1}/{2}.{3}".format(s3_derivative_stub,bag,filename,outformat)
+                    # setup paths from image processing
+                    outpath = "{0}/{1}.{2}".format(output, fle.split('/')[-1].split('.')[0].lower(), outformat)
+                    out_url = "{0}/oulib_tasks/{1}/derivative/{2}/{3}.{4}".format(hostname, task_id, bag,
+                                                                                  fle.split('/')[-1].split('.')[0].lower(),
+                                                                                  outformat)
+                    # process image
+                    _processimage(inpath=inpath, outpath=outpath, outformat=outformat, filter=filter, scale=scale, crop=crop)
+                    # upload derivative to s3
+                    filename = fle.split('/')[-1].split('.')[0].lower()
+                    s3_key = "{0}/{1}/{2}.{3}".format(s3_derivative_stub, bag, filename, outformat)
                     s3.meta.client.upload_file(outpath, bucket, s3_key)
-                    s3_url = "https://s3.amazonaws.com/{0}/{1}".format(bucket,s3_key)
-                    #derviative information
-                    derivative_info={"filename":filename,"s3":{"bucket":bucket,"key":s3_key,"url":s3_url},"temp_local_file":outpath,
-                                    "temp_local_url":out_url,"outformat":outformat,"filter":filter,"scale":scale,"crop":crop}
+                    s3_url = "https://s3.amazonaws.com/{0}/{1}".format(bucket, s3_key)
+                    # derviative information
+                    derivative_info = {"filename": filename,
+                                       "s3": {"bucket": bucket,
+                                              "key": s3_key,
+                                              "url": s3_url},
+                                       "temp_local_file": outpath,
+                                       "temp_local_url": out_url,
+                                       "outformat": outformat,
+                                       "filter": filter,
+                                       "scale": scale,
+                                       "crop": crop}
                     os.remove(inpath)
                     if datacatalog:
-                        data_catalog(bag,derivative_info, itm)
-        shutil.rmtree(os.path.join(resultpath,'src/',bag))
-    shutil.rmtree(os.path.join(resultpath,'src/'))
+                        data_catalog(bag, derivative_info, itm)
+
+        shutil.rmtree(os.path.join(resultpath, 'src/', bag))
+
+    shutil.rmtree(os.path.join(resultpath, 'src/'))
+
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
 
-def data_catalog(bag,derivative_info, org_data,database='catalog',collection='digital_objects'):
+def data_catalog(bag, derivative_info, org_data, database='catalog', collection='digital_objects'):
     """ This is a first stab at getting information into the data catalog. Will need to figure out 
         processs. This gives the creation of a digital object collection with derivative information.
         Problems to solve:
@@ -191,34 +233,38 @@ def data_catalog(bag,derivative_info, org_data,database='catalog',collection='di
             access derivatives for specific reason - add a tags field for identification for specific application
  
     """
-    #get data catalog token
-    f1=open('/code/cybercom_token','r')
+
+    # get data catalog token
+    f1 = open('/code/cybercom_token', 'r')
     token = "Token {0}".format(f1.read().strip())
     f1.close()
-    headers ={'Content-Type':'application/json',"Authorization":token}
-    url_dc_collection="{0}/api/catalog/data/{1}/{2}/.json".format(hostname,database,collection)
+    headers = {'Content-Type': 'application/json', "Authorization": token}
+    url_dc_collection = "{0}/api/catalog/data/{1}/{2}/.json".format(hostname, database, collection)
     update_url_template = "{0}/api/catalog/data/{1}/{2}/{3}/.json"
     # check for existing metadata listing
-    req = requests.get(url_dc_collection + "?query={'filter':{'bag':'%s'}}" % (bag))
-    d_object=req.json()
-    if d_object['count']>0:
-        newdata=d_object['results'][0]
-        if not 'derivatives' in newdata.keys():
-            newdata['derivatives']={derivative_info["filename"]:[]}
+    req = requests.get(url_dc_collection + "?query={'filter':{'bag':'%s'}}" % bag)
+    d_object = req.json()
+
+    if d_object['count'] > 0:
+        newdata = d_object['results'][0]
+        if 'derivatives' not in newdata.keys():
+            newdata['derivatives'] = {derivative_info["filename"]: []}
         if derivative_info["filename"] in newdata['derivatives'].keys():
-             newdata['derivatives'][derivative_info["filename"]].append(derivative_info)
+            newdata['derivatives'][derivative_info["filename"]].append(derivative_info)
         else:
-            newdata['derivatives'][derivative_info["filename"]]= [derivative_info]           
-        #update metadata
-        update_url=update_url_template.format(hostname,database,collection,newdata['_id'])
-        req=requests.put(update_url,data=json.dumps(newdata),headers=headers)
+            newdata['derivatives'][derivative_info["filename"]] = [derivative_info]
+        # update metadata
+        update_url = update_url_template.format(hostname, database, collection, newdata['_id'])
+        req = requests.put(update_url, data=json.dumps(newdata), headers=headers)
     else:
-        newdata={}
-        newdata['locations']={'s3':org_data['s3'],'nas':org_data['nas'],'norfile':org_data['norfile']}
-        newdata['bag']=bag
-        newdata['department']=org_data['department']
-        newdata['project']=org_data['project']
-        newdata['derivatives']={derivative_info["filename"]:[derivative_info]}
+        newdata = {}
+        newdata['locations'] = {'s3': org_data['s3'],
+                                'nas': org_data['nas'],
+                                'norfile': org_data['norfile']}
+        newdata['bag'] = bag
+        newdata['department'] = org_data['department']
+        newdata['project'] = org_data['project']
+        newdata['derivatives'] = {derivative_info["filename"]: [derivative_info]}
         # Add new record
-        req=requests.post(url_dc_collection,data=json.dumps(newdata),headers=headers)
+        req = requests.post(url_dc_collection, data=json.dumps(newdata), headers=headers)
 
