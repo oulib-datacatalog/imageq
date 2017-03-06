@@ -12,6 +12,30 @@ s3_derivative_stub="derivative-bags"
 #imagemagick needs to be installed within the docker container
 
 
+def _formatextension(imageformat):
+    """ get common file extension of image format """
+    imgextensions = {"JPEG": "jpg",
+                     "TIFF": "tif",
+                             }
+    try:
+        return imgextensions[imageformat.upper()]
+    except KeyError:
+        return imageformat.lower()
+
+
+def _params_as_string(outformat="", filter="", scale=None, crop=None):
+    """
+    Internal function to return image processing parameters as a single string
+    Input: outformat="TIFF", filter="ANTIALIAS", scale=0.5, crop=[10, 10, 200, 200]
+    Returns: tiff_050_antialias_10_10_200_200
+    """
+    imgformat = outformat.lower()
+    imgfilter = filter.lower() if scale else None  # do not include filter if not scaled
+    imgscale = str(int(scale * 100)).zfill(3) if scale else "100"
+    imgcrop = "_".join((str(x) for x in crop)) if crop else None
+    return "_".join((x for x in (imgformat, imgscale, imgfilter, imgcrop) if x))
+
+
 def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
     Internal function to create image derivatives
@@ -68,6 +92,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
+
 @task()
 def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_destination='derivative-bags',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
@@ -107,7 +132,7 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_d
             if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
                 inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
                 s3.meta.client.download_file(bucket.name, filename, inpath)
-                outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),outformat)
+                outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 #process image
                 _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
                 #upload derivative to s3
