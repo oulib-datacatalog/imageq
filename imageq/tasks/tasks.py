@@ -122,8 +122,6 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_d
         derivative_keys=[]
         src_input = os.path.join(resultpath,'src/',bag)
         output = os.path.join(resultpath,'derivative/',bag)
-        src_input = os.path.join(resultpath,'src/',bag)
-        output = os.path.join(resultpath,'derivative/',bag)
         os.makedirs(src_input)
         os.makedirs(output)
         source_location = "{0}/{1}/data".format(s3_source,bag)
@@ -135,9 +133,10 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source-bags',s3_d
                 outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 #process image
                 _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                parameters = _params_as_string(outformat=outformat, filter=filter, scale=scale, crop=crop)
                 #upload derivative to s3
                 fname=filename.split('/')[-1].split('.')[0].lower()
-                s3_key = "{0}/{1}/{2}.{3}".format(s3_destination,bag,fname,outformat)
+                s3_key = "{0}/{1}/{2}/{3}.{4}".format(s3_destination,bag,parameters,fname,_formatextension(outformat))
                 derivative_keys.append(s3_key)
                 #upload to 
                 s3.meta.client.upload_file(outpath, bucket.name, s3_key)
