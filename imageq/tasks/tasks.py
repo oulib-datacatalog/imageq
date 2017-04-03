@@ -118,6 +118,7 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
     #s3 boto
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(s3_bucket)
+    formatparams = _params_as_string(nutformat=outformat, filter=filter, scale=scale, crop=crop)
     for bag in bags.split(','):
         derivative_keys=[]
         src_input = os.path.join(resultpath,'src/',bag)
@@ -133,14 +134,13 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
                 outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 #process image
                 _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
-                parameters = _params_as_string(outformat=outformat, filter=filter, scale=scale, crop=crop)
                 #upload derivative to s3
                 fname=filename.split('/')[-1].split('.')[0].lower()
-                s3_key = "{0}/{1}/{2}/{3}.{4}".format(s3_destination,bag,parameters,fname,_formatextension(outformat))
+                s3_key = "{0}/{1}/{2}/{3}.{4}".format(s3_destination,bag,formatparams,fname,_formatextension(outformat))
                 derivative_keys.append(s3_key)
                 #upload to 
                 s3.meta.client.upload_file(outpath, bucket.name, s3_key)
                 os.remove(inpath)
         shutil.rmtree(os.path.join(resultpath,'src/',bag))
     shutil.rmtree(os.path.join(resultpath,'src/'))
-    return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id} 
+    return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams} 
