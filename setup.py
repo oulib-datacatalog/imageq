@@ -2,7 +2,7 @@
 #ez_setup.use_setuptools()
 from setuptools import setup, find_packages
 setup(name='imageq',
-      version='0.0',
+      version='0.1',
       packages= find_packages(),
       package_data={'imageq':['tasks/templates/*.tmpl','imageq/tasks/templates/*.tmpl']},
       install_requires=[
@@ -12,6 +12,7 @@ setup(name='imageq',
           'requests==2.9.1',
           'pillow==3.3.1',
           'jinja2',
+          'boto3',
       ],
      dependency_links=[
           'http://github.com/ouinformatics/dockertask/tarball/master#egg=dockertask-0.0',
