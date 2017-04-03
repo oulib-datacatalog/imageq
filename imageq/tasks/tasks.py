@@ -118,7 +118,7 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
     #s3 boto
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(s3_bucket)
-    formatparams = _params_as_string(nutformat=outformat, filter=filter, scale=scale, crop=crop)
+    formatparams = _params_as_string(outformat=outformat, filter=filter, scale=scale, crop=crop)
     for bag in bags.split(','):
         derivative_keys=[]
         src_input = os.path.join(resultpath,'src/',bag)
