@@ -135,6 +135,7 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
                 outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 #process image
                 _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
+                os.remove(inpath) # remove src image after generating derivative
                 if upload_s3:
                     #upload derivative to s3
                     fname=filename.split('/')[-1].split('.')[0].lower()
@@ -142,7 +143,6 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
                     derivative_keys.append(s3_key)
                     #upload to 
                     s3.meta.client.upload_file(outpath, bucket.name, s3_key)
-                    os.remove(inpath)
         shutil.rmtree(os.path.join(resultpath,'src/',bag))
     shutil.rmtree(os.path.join(resultpath,'src/'))
     if not upload_s3:
