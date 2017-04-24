@@ -146,6 +146,6 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
         shutil.rmtree(os.path.join(resultpath,'src/',bag))
     shutil.rmtree(os.path.join(resultpath,'src/'))
     if not upload_s3:
-        return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":None,"s3_bags":None, "task_id":task_id, "format_parameters": formatparams} 
+        return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":None,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams} 
     return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams} 
 
