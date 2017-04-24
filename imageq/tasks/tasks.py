@@ -94,7 +94,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
 
 
 @task()
-def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destination='derivative',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
+def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destination='derivative',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, upload_s3=True):
     """
         This task is used for derivative generation for the OU Library. This does not use the data catalog.
         Bags do not have to be valid. TIFF or TIF files are transformed and upload to AWS S3 destination.
@@ -110,6 +110,7 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
             scale - percentage to scale by represented as a decimal
             filter - string representing filter to apply to resized image - default is "ANTIALIAS"
             crop - list of coordinates to crop from - i.e. [10, 10, 200, 200]
+            upload_s3 (boolean) - upload derivative images to S3
     """
     task_id = str(derivative_generation.request.id)
     #create Result Directory
@@ -134,13 +135,17 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
                 outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
                 #process image
                 _processimage(inpath=inpath,outpath=outpath,outformat=outformat,filter=filter,scale=scale,crop=crop)
-                #upload derivative to s3
-                fname=filename.split('/')[-1].split('.')[0].lower()
-                s3_key = "{0}/{1}/{2}/{3}.{4}".format(s3_destination,bag,formatparams,fname,_formatextension(outformat))
-                derivative_keys.append(s3_key)
-                #upload to 
-                s3.meta.client.upload_file(outpath, bucket.name, s3_key)
-                os.remove(inpath)
+                if upload_s3:
+                    #upload derivative to s3
+                    fname=filename.split('/')[-1].split('.')[0].lower()
+                    s3_key = "{0}/{1}/{2}/{3}.{4}".format(s3_destination,bag,formatparams,fname,_formatextension(outformat))
+                    derivative_keys.append(s3_key)
+                    #upload to 
+                    s3.meta.client.upload_file(outpath, bucket.name, s3_key)
+                    os.remove(inpath)
         shutil.rmtree(os.path.join(resultpath,'src/',bag))
     shutil.rmtree(os.path.join(resultpath,'src/'))
+    if not upload_s3:
+        return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":None,"s3_bags":None, "task_id":task_id, "format_parameters": formatparams} 
     return {"local_derivatives":"{0}/oulib_tasks/{1}".format(hostname, task_id),"s3_destination":s3_destination,"s3_bags":bags, "task_id":task_id, "format_parameters": formatparams} 
+
