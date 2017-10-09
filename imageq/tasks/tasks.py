@@ -129,6 +129,9 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
         source_location = "{0}/{1}/data".format(s3_source,bag)
         for obj in bucket.objects.filter(Prefix=source_location):
             filename=obj.key
+            if filename.split('.')[-2][-5:].lower() == '_orig':
+                # skip files similar to 001_orig.tif, etc.
+                continue
             if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
                 inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
                 s3.meta.client.download_file(bucket.name, filename, inpath)
