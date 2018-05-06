@@ -1,9 +1,8 @@
 from celery.task import task
-from dockertask import docker_task
 from PIL import Image
-from subprocess import check_call, check_output, call
+from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
-import os,boto3,requests,shlex,shutil,json
+import os,boto3,shutil
 
 #Default base directory
 basedir = "/data/web_data/static"
@@ -131,6 +130,9 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
             filename=obj.key
             if filename.split('.')[-2][-5:].lower() == '_orig':
                 # skip files similar to 001_orig.tif, etc.
+                continue
+            if filename.split('/')[-1][0] == '.':
+                # skip files starting with a period
                 continue
             if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
                 inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
