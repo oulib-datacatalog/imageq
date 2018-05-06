@@ -102,8 +102,8 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
             bags (string): comma separated list of bags. Example - 'bag1,bag2,bag3'
         kwargs:
             s3_bucket (string); Defult 'ul-bagit' 
-            s3_source (string): Default 'source-bags'
-            s3_destination (string): Default 'derivative-bags'
+            s3_source (string): Default 'source'
+            s3_destination (string): Default 'derivative'
             outformat - string representation of image format - default is "TIFF". 
                         Available Formats: http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html
             scale - percentage to scale by represented as a decimal
