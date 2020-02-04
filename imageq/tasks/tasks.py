@@ -5,8 +5,8 @@ from tempfile import NamedTemporaryFile
 import os,boto3,shutil
 
 #Default base directory
-basedir = "/data/web_data/static"
-hostname = "https://cc.lib.ou.edu"
+basedir = os.environ.get('CC_STATIC_DIR')
+hostname = os.environ.get('CC_HOSTNAME')
 #imagemagick needs to be installed within the docker container
 
 
