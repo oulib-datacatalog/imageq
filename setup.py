@@ -2,10 +2,11 @@
 #ez_setup.use_setuptools()
 from setuptools import setup, find_packages
 setup(name='imageq',
-      version='0.2',
+      version='0.3',
       packages= find_packages(),
       install_requires=[
-          'pillow==6.2.1',
+          'celery==3.1.22',
+          'pillow==6.2.2',
           'boto3',
       ],
 )
