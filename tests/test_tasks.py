@@ -1,4 +1,5 @@
 import sys
+import re
 from nose.tools import assert_true, assert_false, assert_equal, nottest
 try:
     from unittest.mock import MagicMock, Mock, patch
@@ -40,3 +41,30 @@ def test_image():
 def test_open_16bit_image():
     image = Image.open("tests/img.png")
     assert_true(image)
+
+
+def test_ignore_files():
+    filename = ".test.tiff"
+    assert_true(re.search("^\.", filename))
+
+    filename = "test_orig.tif"
+    assert_true(re.search("(original|orig)\.\w{3,4}$", filename, re.IGNORECASE))
+
+    filename = "test.original.TIFF"
+    assert_true(re.search("(original|orig)\.\w{3,4}$", filename, re.IGNORECASE))
+
+
+def test_limit_to_tiff_images():
+    filename = "test.tif"
+    assert_true(re.search("(tif|tiff)$", filename, re.IGNORECASE))
+
+    filename = "test.tiff"
+    assert_true(re.search("(tif|tiff)$", filename, re.IGNORECASE))
+
+    filename = "test.TIFF"
+    assert_true(re.search("(tif|tiff)$", filename, re.IGNORECASE))
+
+    filename = "test.jpg"
+    assert_false(re.search("(tif|tiff)$", filename, re.IGNORECASE))
+
+

@@ -3,6 +3,7 @@ from PIL import Image
 from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
 import os,boto3,shutil
+import re
 
 #Default base directory
 basedir = "/data/web_data/static"
@@ -127,13 +128,13 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
         source_location = "{0}/{1}/data".format(s3_source,bag)
         for obj in bucket.objects.filter(Prefix=source_location):
             filename=obj.key
-            if filename.split('.')[-2][-4:].lower() == 'orig':
-                # skip files similar to 001_orig.tif, 001.orig.tif, etc.
+            if re.search("(original|orig)\.\w{3,4}$", filename, re.IGNORECASE):
+                # skip files similar to 001_orig.tif, 001.orig.tif, 001_Original.tiff, 001.original.jpg,  etc.
                 continue
-            if filename.split('/')[-1][0] == '.':
+            if re.search("^\.", filename):
                 # skip files starting with a period
                 continue
-            if filename.split('.')[-1].lower()=='tif' or filename.split('.')[-1].lower()=='tiff':
+            if re.search("(tif|tiff)$", filename, re.IGNORECASE):
                 inpath="{0}/{1}".format(src_input,filename.split('/')[-1])
                 s3.meta.client.download_file(bucket.name, filename, inpath)
                 outpath="{0}/{1}.{2}".format(output,filename.split('/')[-1].split('.')[0].lower(),_formatextension(outformat))
