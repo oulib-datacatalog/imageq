@@ -127,11 +127,11 @@ def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destin
         os.makedirs(output)
         source_location = "{0}/{1}/data".format(s3_source,bag)
         for obj in bucket.objects.filter(Prefix=source_location):
-            filename=obj.key
+            filename=obj.key  # ex: source/Smith_1816/data/001.tif
             if re.search("(original|orig)\.\w{3,4}$", filename, re.IGNORECASE):
                 # skip files similar to 001_orig.tif, 001.orig.tif, 001_Original.tiff, 001.original.jpg,  etc.
                 continue
-            if re.search("^\.", filename):
+            if re.search("^\.", filename.split("/")[-1]):
                 # skip files starting with a period
                 continue
             if re.search("(tif|tiff)$", filename, re.IGNORECASE):
