@@ -6,7 +6,7 @@ setup(name='imageq',
       packages= find_packages(),
       install_requires=[
           'celery==3.1.22',
-          'pillow==6.2.2',
+          'pillow==9.0.1',
           'boto3',
       ],
 )
