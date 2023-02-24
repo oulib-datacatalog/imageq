@@ -1,4 +1,4 @@
-from celery.task import task
+from celery import Celery
 from PIL import Image
 from subprocess import check_call, check_output
 from tempfile import NamedTemporaryFile
@@ -9,6 +9,9 @@ import re
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
 #imagemagick needs to be installed within the docker container
+
+app = Celery()
+app.config_from_object(celeryconfig)
 
 
 def _formatextension(imageformat):
@@ -62,7 +65,7 @@ def _processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=N
     image.save(outpath, outformat)
 
 
-@task()
+@app.task()
 def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None):
     """
     Digilab TIFF derivative Task
@@ -92,7 +95,7 @@ def processimage(inpath, outpath, outformat="TIFF", filter="ANTIALIAS", scale=No
     return "{0}/oulib_tasks/{1}".format(hostname, task_id)
 
 
-@task()
+@app.task()
 def derivative_generation(bags,s3_bucket='ul-bagit',s3_source='source',s3_destination='derivative',outformat="TIFF", filter="ANTIALIAS", scale=None, crop=None, upload_s3=True):
     """
         This task is used for derivative generation for the OU Library. This does not use the data catalog.
