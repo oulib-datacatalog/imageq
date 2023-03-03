@@ -1,3 +1,4 @@
+import logging
 from celery import Celery
 from PIL import Image
 from subprocess import check_call, check_output
@@ -5,13 +6,23 @@ from tempfile import NamedTemporaryFile
 import os,boto3,shutil
 import re
 
+logging.basicConfig(level=logging.INFO)
+
+try:
+    import celeryconfig
+except ImportError:
+    logging.error("Failed to import celeryconfig")
+    celeryconfig = None
+
 #Default base directory
 basedir = "/data/web_data/static"
 hostname = "https://cc.lib.ou.edu"
 #imagemagick needs to be installed within the docker container
 
 app = Celery()
-app.config_from_object(celeryconfig)
+
+if celeryconfig:
+    app.config_from_object(celeryconfig)
 
 
 def _formatextension(imageformat):
